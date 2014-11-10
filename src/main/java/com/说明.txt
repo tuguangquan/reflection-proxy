@@ -1,0 +1,55 @@
+动态代理应用了java的反射机制，其实现的步骤为
+1、建立接口
+
+public interface Say {
+    public void sayHello();
+}
+
+2、建立实现此接口的实现类
+
+public class Leader implements Say {
+    @Override
+    public void sayHello() {
+        System.out.println("Leader sayHello");
+    }
+}
+
+3、建立实现InvocationHandler的实现类
+
+public class DynamicProxy implements InvocationHandler {
+    private Object object;
+
+    public void setObject(Object object) {
+        this.object = object;
+    }
+
+    public DynamicProxy(Object object){
+        this.object = object;
+    }
+
+    public DynamicProxy(){
+
+    }
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        method.invoke(object,args);
+        return object;
+    }
+}
+
+4、测试
+
+public class Client {
+    public static void main(String[] args){
+        DynamicProxy hander=new DynamicProxy();
+        Say say=null;
+        hander.setObject(new Leader());
+        //这里会动态生成一个动态代理类，此类继承第二个参数中的所有接口
+        //将此生成的代理类强制转换成对应的接口，后面调用的是此动态生成的接口方法
+        //只要调用此动态生成的接口方法，就会直接触发实现InvocationHandler的实现类中的invoke（）方法
+        Say say1=(Say)Proxy.newProxyInstance(Say.class.getClassLoader(), new Class[]{Say.class}, hander);
+         //invoke（）方法应用了java的反射机制获得运行时的method和对应的参数，这里就将 sayHello 赋值给method中，如果sayHello中有参数，就将此参数传递给args中
+        say1.sayHello();
+    }
+}
